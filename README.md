@@ -33,7 +33,7 @@ For IDE we recommend using one of these:
 * The middle ground new kid on the block https://www.jetbrains.com/rider/
 * Or the oldie and goldie, the way of .NET https://visualstudio.microsoft.com/downloads/
 
-Alternative is to use commandline by navigating to the folder you just got from git or extracting the zip
+Alternative is to use commandline by navigating to the folder you just got from git or extracting the zip and run the command
 ```
 dotnet restore
 ```
