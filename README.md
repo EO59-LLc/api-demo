@@ -2,7 +2,7 @@
 This is a simple .NET Core console application that will connect to EO59 data api at https://api.eo59.com and download data sets
 belonging to issued subscription key. 
 
-Please note that each susbcription key is project based and will contain only data sets from that project, to download multiple projects
+Please note that each subscription key is project based and will contain only data sets from that project, to download multiple projects
 this sample application needs to be modified to support array of project definitions. For simplicity, downloading only one project is 
 demonstrated, however code is structured in a way that supporting multiple projects can be addedd with minimal effort.
 
@@ -42,6 +42,6 @@ dotnet run
 ```
 
 # Notes about limits
-Deformation data is gathered from Sattelites, thus it is not working in real time, depending on orbital location the update cycle can be from week to two weeks.
+Deformation data is gathered from satellites, thus it is not working in real time, depending on orbital location the update cycle can be from week to two weeks.
 Data sets are also sizable, as such it is recommended that you will check for updates maximum once in 24 hours, or once a week in case of full automation.
 For manual download EO59 always notifies clients via email when the new data is available.
