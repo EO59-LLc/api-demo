@@ -59,6 +59,7 @@ Once project settings are configured you can run sample application with:
 ```
 dotnet run
 ```
+or if you have opened the project in IDE you can just use it's run command.
 
 # Notes about limits
 Deformation data is gathered from satellites, thus it is not working in real time, depending on orbital location the update cycle can be from week to two weeks.
