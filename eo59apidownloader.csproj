@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
-    <RootNamespace>EO59.Api.Downloader</RootNamespace>
-    <PackageId>EO59APIDownloader</PackageId>
+    <RootNamespace>EO59.Api.Demo</RootNamespace>
+    <PackageId>EO59APIDemo</PackageId>
     <Title>EO59 Data API Downloader</Title>
     <Authors>Andrius Lokotaš</Authors>
     <Description>A little sample utility that can be used to download data off the API.</Description>
@@ -18,6 +18,7 @@
     <PackageReleaseNotes>Initial setup.</PackageReleaseNotes>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <AssemblyName>eo59apidemo</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

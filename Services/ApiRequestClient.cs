@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace EO59.Api.Downloader.Services
+namespace EO59.Api.Demo.Services
 {
     /// <summary>
     /// This is minimalistic implementation of WebClient to download
@@ -17,7 +17,7 @@ namespace EO59.Api.Downloader.Services
         public static async Task<string> GetString(string url)
         {
             using var webClient = new System.Net.WebClient();
-            webClient.Headers.Set("Accept","application/json");
+            webClient.Headers.Set("Accept", "application/json");
             return await webClient.DownloadStringTaskAsync(new Uri(url));
         }
     }

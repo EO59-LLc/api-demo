@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace EO59.Api.Downloader.Models
+namespace EO59.Api.Demo.Models
 {
     /// <summary>
     /// Information block about subscription.
@@ -28,6 +28,6 @@ namespace EO59.Api.Downloader.Models
         /// <summary>
         /// List of data sets in the subscription.
         /// </summary>
-        public List<SubscriptionDataSource> DataSets { get; set; } = new List<SubscriptionDataSource>();
+        public List<SubscriptionDataSourceModel> DataSets { get; set; } = new List<SubscriptionDataSourceModel>();
     }
 }

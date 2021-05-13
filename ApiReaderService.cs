@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Serilog;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EO59.Api.Downloader.Models;
-using Newtonsoft.Json;
-using Serilog;
-using EO59.Api.Downloader.Services;
+using EO59.Api.Demo.Models;
+using EO59.Api.Demo.Services;
 
-namespace EO59.Api.Downloader
+namespace EO59.Api.Demo
 {
     /// <summary>
     /// This is a demo class to show data retrieval workflow for EO59 API
@@ -19,39 +19,44 @@ namespace EO59.Api.Downloader
         ///  Logger instance
         /// </summary>
         private readonly ILogger _logger;
+
         /// <summary>
         /// Static definition of API base URL
         /// </summary>
         private const string ApiBase = "https://api.eo59.com/api/";
+
         /// <summary>
         /// Variable to store file system root directory location
         /// </summary>
         private readonly string _basePath;
+
         /// <summary>
         /// Size of data page to be downloaded, supported sizes are from 1 to
         /// 10000, currently using recommended default of 5000
         /// </summary>
         private const int DownloadPageSize = 5000;
+
         /// <summary>
         /// Default constructor
         /// </summary>
-        /// <param name="logger">Pass instance of Serilog logger</param>
+        /// <param name="logger">Pass instance of <see cref="Serilog"/> logger</param>
         /// <param name="basePath">Pass variable containing file system root where
         /// data will be stored.</param>
-        public ApiReaderService(ILogger logger,string basePath)
+        public ApiReaderService(ILogger logger, string basePath)
         {
             _logger = logger;
             _basePath = basePath;
         }
+
         /// <summary>
         /// Main workflow entry point
         /// </summary>
         /// <param name="subscription">Pass here valid subscription key</param>
         /// <param name="name">Pass here name for subscription, will be used to store cached file.</param>
         /// <returns></returns>
-        public async Task DoWork(string subscription, string name )
+        public async Task DoWork(string subscription, string name)
         {
-            _logger.Information("Checking API subscription {Name}",name);
+            _logger.Information("Checking API subscription {Name}", name);
             // Define main place holder for subscription information block from API.
             SubscriptionModel sub;
             try
@@ -62,25 +67,25 @@ namespace EO59.Api.Downloader
             }
             catch (Exception e)
             {
-                _logger.Fatal(e,"Error while reading subscription for {Name}",name);
+                _logger.Fatal(e, "Error while reading subscription for {Name}", name);
                 return;
             }
             // Check if subscription is missing.
             if (sub == null)
             {
-                _logger.Error("Subscription for {Name} is empty, check key value",name);
+                _logger.Error("Subscription for {Name} is empty, check key value", name);
                 return;
             }
             // Check if subscription has any data sets.
             if (sub.DataSets == null || sub.DataSets.Count == 0)
             {
-                _logger.Warning("Subscription {Name} has no data sets, exiting",name);
+                _logger.Warning("Subscription {Name} has no data sets, exiting", name);
                 return;
             }
             // Check cached json to check if subscription has new data.
             if (!await NeedToProcessDataSet(name, sub))
             {
-                _logger.Information("No changes in data for {Name}, exiting",name);
+                _logger.Information("No changes in data for {Name}, exiting", name);
                 return;
             }
             // Start processing subscription data.
@@ -92,21 +97,22 @@ namespace EO59.Api.Downloader
                 var fileName = Path.Combine(_basePath, $"{dataSet.DataSourceKey}.json");
                 await DownloadDataSet(subscription, dataSet.DataSourceKey, dataSet.NumberOfPoints, fileName);
             }
-            // Replace or save subscription block from API to cached file, this will be used to check if there 
+            // Replace or save subscription block from API to cached file, this will be used to check if there
             // are any updates in future requests.
             try
             {
-                File.WriteAllText(GetSubscriptionCachedFileName(name),
+                await File.WriteAllTextAsync(GetSubscriptionCachedFileName(name),
                     JsonConvert.SerializeObject(sub));
             }
             catch (Exception e)
             {
-                _logger.Error(e,"Writing subscription cache file caused exception");
+                _logger.Error(e, "Writing subscription cache file caused exception");
             }
             _logger.Information("Completed all tasks, exiting");
         }
+
         /// <summary>
-        /// Metod to compare cached copy of subscription block to new data.
+        /// Method to compare cached copy of subscription block to new data.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="newData"></param>
@@ -124,11 +130,14 @@ namespace EO59.Api.Downloader
             // cached file sanity check
             if (cached != null && cached.DataSets.Count < newData.DataSets.Count) return true;
             // check if any update dates have changed since last download
-            return cached != null && (from dataSet in cached.DataSets let toCheck = newData.DataSets
-                    .FirstOrDefault(x => x.DataSourceKey == dataSet.DataSourceKey) 
-                where toCheck != null where DateTimeOffset.Compare(dataSet.LastUpdate, toCheck.LastUpdate) != 0 
-                select dataSet).Any();
+            return cached != null && (from dataSet in cached.DataSets
+                                      let toCheck = newData.DataSets
+.FirstOrDefault(x => x.DataSourceKey == dataSet.DataSourceKey)
+                                      where toCheck != null
+                                      where DateTimeOffset.Compare(dataSet.LastUpdate, toCheck.LastUpdate) != 0
+                                      select dataSet).Any();
         }
+
         /// <summary>
         /// Convert name into subscription cache file name.
         /// </summary>
@@ -138,8 +147,13 @@ namespace EO59.Api.Downloader
         {
             return Path.Combine(_basePath, $"{name}.json");
         }
+
         /// <summary>
-        /// Download and save data set into json file
+        /// Download and save data set into JSON text file.
+        /// Please note:
+        /// This is simplistic text processing approach that does not include JSON validation
+        /// When creating a tool that will later convert or move data to another format, please change the method
+        /// to use DTO conversion and validate data context.
         /// </summary>
         /// <param name="subscription">Subscription key</param>
         /// <param name="key">Data set key</param>
@@ -148,19 +162,19 @@ namespace EO59.Api.Downloader
         /// <returns></returns>
         private async Task DownloadDataSet(string subscription, int key, int rows, string fileName)
         {
-            _logger.Information("Downloading data set {Id} to {File}",key,fileName);
+            _logger.Information("Downloading data set {Id} to {File}", key, fileName);
             // Set remaining rows count
             var remaining = rows;
             // Set start of download page, we load from 0
             var skip = 0;
-            // We will collect json strings into string builder
+            // We will collect JSON strings into string builder, this is simplistic approach and we do not validate data.
             var data = new StringBuilder();
             // Since saved json will contain array of points, append start of array.
             data.Append('[');
             // Loop to page through data segments.
             while (remaining > 0)
             {
-                _logger.Information("Remaining rows: {Rows}",remaining);
+                _logger.Information("Remaining rows: {Rows}", remaining);
                 // build API request url
                 var url = $"{ApiBase}Data?subscription={subscription}&key={key}&numberOfItems={DownloadPageSize}&skip={skip}";
                 // shift loop variables
@@ -169,27 +183,28 @@ namespace EO59.Api.Downloader
 
                 // read json
                 var json = await ApiRequestClient.GetString(url);
-                
+
                 // Check if response has any data
 
                 if (string.IsNullOrWhiteSpace(json))
                 {
-                    _logger.Warning("Reading data at point {Skip} returned empty result, ignoring",skip);
+                    _logger.Warning("Reading data at point {Skip} returned empty result, ignoring", skip);
+                    continue;
                 }
-                else
+                // Small sanity check to make sure response is array like thing.
+                if (!json.Contains("[") || !json.Contains("]")) continue;
+                // returned json is list, remove list symbols to convert them into block, then append
+                json = json.Remove(json.IndexOf('['), 1);
+                json = json.Remove(json.LastIndexOf(']'), 1);
+                data.AppendLine(json);
+                if (remaining > 0)
                 {
-                    // returned json is list, remove list symbols to convert them into block, then append
-                    json = json.Remove(json.IndexOf('['), 1);
-                    json = json.Remove(json.LastIndexOf(']'), 1);
-                    data.AppendLine(json);
-                    if (remaining > 0)
-                    {
-                        data.Append(',');
-                    }
+                    data.Append(',');
                 }
             }
-
+            // append array closing symbol.
             data.Append(']');
+            // write string builder memory stream into final string.
             var finalJson = data.ToString();
             // check if json ends in a way that will cause error
             if (finalJson.EndsWith(",]"))
@@ -199,7 +214,7 @@ namespace EO59.Api.Downloader
             }
             // write json to file
             await File.WriteAllTextAsync(fileName, finalJson);
-            _logger.Information("Completed saving {File}",fileName);
+            _logger.Information("Completed saving {File}", fileName);
         }
     }
 }
