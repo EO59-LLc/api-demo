@@ -1,0 +1,54 @@
+name: Publish
+on:
+  release:
+    types: [published]
+jobs:
+  release:
+    name: Release
+    strategy:
+      matrix:
+        kind: ['linux', 'windows', 'macOS']
+        include:
+          - kind: linux
+            os: ubuntu-latest
+            target: linux-x64
+          - kind: windows
+            os: windows-latest
+            target: win-x64
+          - kind: macOS
+            os: macos-latest
+            target: osx-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+      - name: Build
+        shell: bash
+        run: |
+          # Define some variables for things we need
+          tag=$(git describe --tags --abbrev=0)
+          release_name="eo59apidemo-$tag-${{ matrix.target }}"
+
+          # Build everything
+          dotnet publish eo59apidownloader.csproj --framework netcoreapp5.0 --runtime "${{ matrix.target }}" -c Release -o "$release_name"
+
+          # Pack files
+          if [ "${{ matrix.target }}" == "win-x64" ]; then
+            7z a -tzip "${release_name}.zip" "./${release_name}/*"
+          else
+            tar czvf "${release_name}.tar.gz" "$release_name"
+          fi
+
+          # Delete output directory
+          rm -r "$release_name"
+          - name: action-ghrelease
+            # You may pin to the exact commit or the version.
+            # uses: phuonghuynh/action-ghrelease@08c9010ba33d1fbafd7a06d35afebb93dd0b876a
+            uses: phuonghuynh/action-ghrelease@v1.1.0
+            with:
+              files: "eo59apidemo*"
